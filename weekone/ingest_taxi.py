@@ -2,11 +2,11 @@
 # coding: utf-8
 
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Engine
 from tqdm.auto import tqdm
 import click
 
-dtype = {
+dtype: dict[str, str] = {
     "VendorID": "Int64",
     "passenger_count": "Int64",
     "trip_distance": "float64",
@@ -25,36 +25,20 @@ dtype = {
     "congestion_surcharge": "float64"
 }
 
-parse_dates = [
+parse_dates: list[str] = [
     "tpep_pickup_datetime",
     "tpep_dropoff_datetime"
 ]
 
 
-def ingest_data(
-        url: str,
-        engine,
-        target_table: str,
-        chunksize: int = 100000,
-) -> pd.DataFrame:
-    df = pd.read_parquet(
-        url
-    )
+def ingest_data (url: str, engine: Engine, target_table: str, chunksize: int = 100000,) -> pd.DataFrame:
+    df = pd.read_parquet(url)
 
-    df.head(0).to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="replace"
-    )
+    df.head(0).to_sql(name=target_table, con=engine, if_exists="replace")
 
     print(f"Table {target_table} created")
 
-    df.to_sql(
-        name=target_table,
-        con=engine,
-        if_exists="append",
-        chunksize=chunksize
-    )
+    df.to_sql(name=target_table, con=engine, if_exists="append", chunksize=chunksize)
     print(f'done ingesting to {target_table}')
 
 @click.command()
@@ -73,12 +57,7 @@ def main(pg_user, pg_pass, pg_host, pg_port, pg_db, year, month, chunksize, targ
 
     url = f'{url_prefix}/green_tripdata_{year:04d}-{month:02d}.parquet'
 
-    ingest_data(
-        url=url,
-        engine=engine,
-        target_table=target_table,
-        chunksize=chunksize
-    )
+    ingest_data(url=url, engine=engine, target_table=target_table, chunksize=chunksize)
 
 if __name__ == '__main__':
     main()
